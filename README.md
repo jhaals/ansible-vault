@@ -1,11 +1,9 @@
 # ansible-vault lookup module
-This is a lookup module for generic secrets in [Vault](https://vaultproject.io/)(the  HashiCorp project).
+This is a lookup module for generic secrets in [Vault](https://vaultproject.io/)(the HashiCorp project).
 
 ### Installation
 lookup plugins can be loaded from several different locations similar to $PATH, see
 [http://docs.ansible.com/ansible/intro_configuration.html#lookup-plugins](docs).
-
-This module require the [requests](http://docs.python-requests.org/en/latest/) python library.
 
 ### Usage
 The address to the Vault server and the auth token are fetched from environment variables

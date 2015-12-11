@@ -1,12 +1,11 @@
 import os
+import urllib2
+import json
+import sys
 from urlparse import urljoin
+
 from ansible import utils, errors
 from ansible.utils import template
-
-try:
-    import requests
-except ImportError:
-    raise errors.AnsibleError("Module 'requests' is required to do vault lookups")
 
 class LookupModule(object):
 
@@ -29,9 +28,13 @@ class LookupModule(object):
             raise errors.AnsibleError('VAULT_TOKEN environment variable is missing')
 
         request_url = urljoin(url, "v1/%s" % (terms))
-        r = requests.get(request_url, headers={"X-Vault-Token": token})
-
-        if r.status_code != 200:
-           raise errors.AnsibleError("Failed to get %s from Vault: %s" % (terms, ','.join(r.json()['errors'])))
-
-        return [r.json()['data']['value']]
+        try:
+            headers = { 'X-Vault-Token' : token }
+            req = urllib2.Request(request_url, None, headers)
+            response = urllib2.urlopen(req)
+        except urllib2.HTTPError as e:
+            raise errors.AnsibleError('Unable to read %s from vault: %s' % (terms, e))
+        except:
+            raise errors.AnsibleError('Unable to read %s from vault' % terms)
+        result = json.loads(response.read())
+        return [result['data']['value']]
