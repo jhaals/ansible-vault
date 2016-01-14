@@ -1,6 +1,8 @@
 # ansible-vault lookup module
 This is a lookup module for generic secrets in [Vault](https://vaultproject.io/)(the HashiCorp project).
 
+The plugin is currently written for ansible 2.0 but a working version for ansible 1.9 exist under the 1.0.0 tag.
+
 ### Installation
 lookup plugins can be loaded from several different locations similar to $PATH, see [docs](http://docs.ansible.com/ansible/intro_configuration.html#lookup-plugins).
 
