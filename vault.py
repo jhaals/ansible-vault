@@ -12,6 +12,10 @@ class LookupModule(LookupBase):
 
     def run(self, terms, variables, **kwargs):
         key = terms[0]
+        try:
+            field = terms[1]
+        except:
+            field = None
 
         url = os.getenv('VAULT_ADDR')
         if not url:
@@ -33,4 +37,4 @@ class LookupModule(LookupBase):
 
         result = json.loads(response.read())
 
-        return [result['data']['value']]
+        return [result['data'][field]] if field is not None else result['data']
