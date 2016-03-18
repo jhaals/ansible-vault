@@ -37,4 +37,4 @@ class LookupModule(LookupBase):
 
         result = json.loads(response.read())
 
-        return [result['data'][field]] if field is not None else result['data']
+        return [result['data'][field]] if field is not None else [result['data']]
