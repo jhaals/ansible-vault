@@ -17,3 +17,17 @@ ansible-vault then works as any other lookup plugin.
 ```yaml
 - debug: msg="{{lookup('vault', 'secret/foo', 'value')}}"
 ```
+
+```yaml
+# templates/example.j2
+
+# Generic secrets
+{{ lookup('vault', 'secret/hello').value }} # world
+# Specify field inside lookup
+{{ lookup('vault', 'secret/hello', 'value') }} # world
+
+# Dynamic secret
+{% set aws = lookup('vault', 'aws/creds/deploy') %}
+access_key = {{ aws.access_key }} # AKSCAIZSFSYHFGA
+secret_key = {{ aws.secret_key }} # 4XSLxDUS+hyXgoIHEhCKExHDGAJDHFiUA/adi
+```
