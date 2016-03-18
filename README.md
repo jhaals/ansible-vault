@@ -15,5 +15,5 @@ The address to the Vault server and the auth token are fetched from environment 
 ansible-vault then works as any other lookup plugin.
 
 ```yaml
-- debug: msg="{{lookup('vault', 'secret/foo')}}"
+- debug: msg="{{lookup('vault', 'secret/foo', 'value')}}"
 ```
