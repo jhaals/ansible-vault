@@ -1,5 +1,5 @@
 # ansible-vault lookup module
-This is a lookup module for generic secrets in [HashiCorp Vault](https://vaultproject.io/).
+This is a lookup module for secrets stored in [HashiCorp Vault](https://vaultproject.io/).
 
 The plugin is currently written for ansible 2.0 but a working version for ansible 1.9 exists under the 1.0.0 tag.
 
@@ -15,7 +15,7 @@ The address to the Vault server and the auth token are fetched from environment 
 ansible-vault then works as any other lookup plugin.
 
 ```yaml
-- debug: msg="{{lookup('vault', 'secret/foo', 'value')}}"
+- debug: msg="{{ lookup('vault', 'secret/foo', 'value') }}"
 ```
 
 ```yaml
