@@ -26,8 +26,17 @@ ansible-vault then works as any other lookup plugin.
 # Specify field inside lookup
 {{ lookup('vault', 'secret/hello', 'value') }} # world
 
-# Dynamic secret
+# Dynamic secrets
 {% set aws = lookup('vault', 'aws/creds/deploy') %}
 access_key = {{ aws.access_key }} # AKSCAIZSFSYHFGA
 secret_key = {{ aws.secret_key }} # 4XSLxDUS+hyXgoIHEhCKExHDGAJDHFiUA/adi
 ```
+
+### What's the difference between `ansible-vault` and `hashi_vault`
+
+- No external dependencies. hashi_vault requires hvac
+- Uses the same environment variables as vault itself
+- Quicker updates cycle
+- Supports for dynamic secrets
+- Supports for custom fields
+
