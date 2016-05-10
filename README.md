@@ -36,7 +36,7 @@ secret_key = {{ aws.secret_key }} # 4XSLxDUS+hyXgoIHEhCKExHDGAJDHFiUA/adi
 
 - No external dependencies. hashi_vault requires hvac
 - Uses the same environment variables as vault itself
-- Quicker updates cycle
-- Supports for dynamic secrets
-- Supports for custom fields
+- Quicker update cycle
+- Supports dynamic secrets
+- Supports custom fields
 
