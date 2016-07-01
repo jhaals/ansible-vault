@@ -1,4 +1,5 @@
 import os
+import urllib
 import urllib2
 import json
 import sys
@@ -11,7 +12,26 @@ from ansible.plugins.lookup import LookupBase
 class LookupModule(LookupBase):
 
     def run(self, terms, variables, **kwargs):
-        key = terms[0]
+        term_split = terms[0].split(' ', 1)
+        key = term_split[0]
+
+        try:
+            parameters = term_split[1]
+
+            parameters = parameters.split(' ')
+
+            parameter_bag = {}
+            for parameter in parameters:
+                parameter_split = parameter.split('=')
+
+                parameter_key = parameter_split[0]
+                parameter_value = parameter_split[1]
+                parameter_bag[parameter_key] = parameter_value
+
+            data = json.dumps(parameter_bag)
+        except:
+            data = None
+
         try:
             field = terms[1]
         except:
@@ -26,14 +46,16 @@ class LookupModule(LookupBase):
             raise AnsibleError('VAULT_TOKEN environment variable is missing')
 
         request_url = urljoin(url, "v1/%s" % (key))
+
         try:
-            headers = { 'X-Vault-Token' : token }
-            req = urllib2.Request(request_url, None, headers)
+            req = urllib2.Request(request_url, data)
+            req.add_header('X-Vault-Token', token)
+            req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req)
         except urllib2.HTTPError as e:
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
-        except:
-            raise AnsibleError('Unable to read %s from vault' % key)
+        except Exception as e:
+            raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
 
         result = json.loads(response.read())
 
