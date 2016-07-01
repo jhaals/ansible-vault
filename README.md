@@ -23,6 +23,8 @@ ansible-vault then works as any other lookup plugin.
 
 # Generic secrets
 {{ lookup('vault', 'secret/hello').value }} # world
+# Generic secrets with parameters
+{{ lookup('vault', 'pki/issue/example-dot-com common_name=foo.example.com format=pem_bundle').certificate }}
 # Specify field inside lookup
 {{ lookup('vault', 'secret/hello', 'value') }} # world
 
