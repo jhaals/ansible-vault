@@ -36,9 +36,8 @@ secret_key = {{ aws.secret_key }} # 4XSLxDUS+hyXgoIHEhCKExHDGAJDHFiUA/adi
 
 ### What's the difference between `ansible-vault` and `hashi_vault`
 
-- No external dependencies. hashi_vault requires hvac
-- Uses the same environment variables as vault itself
-- Quicker update cycle
-- Supports dynamic secrets
-- Supports custom fields
-
+- (Ansible Vault) No external dependencies; (hashi_vault) requires hvac
+- (Ansible Vault) Uses the same environment variables as vault itself
+- (Ansible Vault) Quicker update cycle
+- (Ansible Vault) Supports dynamic secrets
+- (Ansible Vault) Supports custom fields
