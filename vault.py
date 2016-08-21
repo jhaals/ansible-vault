@@ -5,12 +5,29 @@ import sys
 from urlparse import urljoin
 
 from ansible.errors import AnsibleError
-from ansible.plugins.lookup import LookupBase
+import ansible.utils
+try:
+    from ansible.plugins.lookup import LookupBase
+except ImportError:
+    # ansible-1.9.x
+    class LookupBase(object):
+        def __init__(self, basedir=None, runner=None, **kwargs):
+            self.runner = runner
+            self.basedir = self.runner.basedir
+
+        def get_basedir(self, variables):
+            return self.basedir
 
 
 class LookupModule(LookupBase):
 
-    def run(self, terms, variables, **kwargs):
+    def run(self, terms, inject=None, variables=None, **kwargs):
+        basedir = self.get_basedir(variables)
+
+        if hasattr(ansible.utils, 'listify_lookup_plugin_terms'):
+            # ansible-1.9.x
+            terms = ansible.utils.listify_lookup_plugin_terms(terms, basedir, inject)
+
         term_split = terms[0].split(' ', 1)
         key = term_split[0]
 
