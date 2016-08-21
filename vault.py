@@ -1,7 +1,7 @@
 import os
 import urllib2
 import json
-import sys
+import ssl
 from urlparse import urljoin
 
 from ansible.errors import AnsibleError
@@ -61,13 +61,15 @@ class LookupModule(LookupBase):
         if not token:
             raise AnsibleError('VAULT_TOKEN environment variable is missing')
 
-        request_url = urljoin(url, "v1/%s" % (key))
+        context = ssl.create_default_context(cafile=os.getenv('VAULT_CACERT'),
+                                             capath=os.getenv('VAULT_CAPATH'))
 
+        request_url = urljoin(url, "v1/%s" % (key))
         try:
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', token)
             req.add_header('Content-Type', 'application/json')
-            response = urllib2.urlopen(req)
+            response = urllib2.urlopen(req, context=context)
         except urllib2.HTTPError as e:
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
         except Exception as e:
