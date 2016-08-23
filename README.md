@@ -11,6 +11,13 @@ The address to the Vault server and the auth token are fetched from environment 
     export VAULT_ADDR=http://192.168.33.10:8200/
     export VAULT_TOKEN=56f48aef-8ad3-a0c4-447b-8e96990776ff
 
+The plugin also supports Vault's CA-related environment variables, to
+enable use of a server certificate issued by a not-widely-trusted
+Certificate Authority
+
+    export VAULT_CACERT=/etc/ssl/certs/localCA.pem
+    export VAULT_CAPATH=/etc/ssl/localCA
+
 ansible-vault then works as any other lookup plugin.
 
 ```yaml
