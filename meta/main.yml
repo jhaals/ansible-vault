@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: Johan Haals
+  description: Ansible lookup plugin for HashiCorp Vault
+  min_ansible_version: 1.9
+
+dependencies: []
