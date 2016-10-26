@@ -13,7 +13,9 @@ except ImportError:
     class LookupBase(object):
         def __init__(self, basedir=None, runner=None, **kwargs):
             self.runner = runner
-            self.basedir = self.runner.basedir
+            self.basedir = basedir or (self.runner.basedir
+                                       if self.runner
+                                       else None)
 
         def get_basedir(self, variables):
             return self.basedir
