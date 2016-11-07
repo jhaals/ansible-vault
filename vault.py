@@ -59,7 +59,7 @@ class LookupModule(LookupBase):
 
         # the environment variable takes precendence over the Ansible variable.
         url = os.getenv('VAULT_ADDR')
-        if not url and 'vault_addr' in inject:
+        if not url and inject and 'vault_addr' in inject:
             url = inject['vault_addr']            
         if not url:
             raise AnsibleError('Vault address not set. Specify with'
@@ -83,9 +83,9 @@ class LookupModule(LookupBase):
         # environment variables take precendence over Ansible variables.
         cafile = os.getenv('VAULT_CACERT')
         capath = os.getenv('VAULT_CAPATH')
-        if not cafile and 'vault_cacert' in inject:
+        if not cafile and inject and 'vault_cacert' in inject:
             cafile = inject['vault_cacert']            
-        if not capath and 'vault_capath' in inject:
+        if not capath and inject and 'vault_capath' in inject:
             capath = inject['vault_capath']            
         try:
             context = None
