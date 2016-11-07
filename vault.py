@@ -57,11 +57,17 @@ class LookupModule(LookupBase):
         except:
             field = None
 
+        # the environment variable takes precendence over the Ansible variable.
         url = os.getenv('VAULT_ADDR')
+        if not url and 'vault_addr' in inject:
+            url = inject['vault_addr']            
         if not url:
-            raise AnsibleError('VAULT_ADDR environment variable is missing')
+            raise AnsibleError('Vault address not set. Specify with'
+                               ' VAULT_ADDR environment variable or vault_addr Ansible variable')
 
-        # the environment variable takes precedence over the file-based token
+        # the environment variable takes precedence over the file-based token.
+        # intentionally do *not* support setting this via an Ansible variable,
+        # so as not to encourage bad security practices.
         token = os.getenv('VAULT_TOKEN')
         if not token:
             try:
@@ -74,8 +80,13 @@ class LookupModule(LookupBase):
             raise AnsibleError('Vault authentication token missing. Specify with'
                                ' VAULT_TOKEN environment variable or $HOME/.vault-token')
 
+        # environment variables take precendence over Ansible variables.
         cafile = os.getenv('VAULT_CACERT')
         capath = os.getenv('VAULT_CAPATH')
+        if not cafile and 'vault_cacert' in inject:
+            cafile = inject['vault_cacert']            
+        if not capath and 'vault_capath' in inject:
+            capath = inject['vault_capath']            
         try:
             context = None
             if cafile or capath:
