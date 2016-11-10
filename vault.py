@@ -59,9 +59,18 @@ class LookupModule(LookupBase):
         if not url:
             raise AnsibleError('VAULT_ADDR environment variable is missing')
 
+        # the environment variable takes precedence over the file-based token
         token = os.getenv('VAULT_TOKEN')
         if not token:
-            raise AnsibleError('VAULT_TOKEN environment variable is missing')
+            try:
+                with open(os.path.join(os.getenv('HOME'), '.vault-token')) as file:
+                    token = file.read()
+            except IOError:
+                # token not found in file is same case below as not found in env var
+                pass
+        if not token:
+            raise AnsibleError('Vault authentication token missing. Specify with'
+                               ' VAULT_TOKEN environment variable or $HOME/.vault-token')
 
         context = ssl.create_default_context(cafile=os.getenv('VAULT_CACERT'),
                                              capath=os.getenv('VAULT_CAPATH'))
