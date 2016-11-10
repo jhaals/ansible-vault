@@ -2,6 +2,8 @@ import os
 import urllib2
 import json
 import ssl
+from distutils.version import StrictVersion
+from sys import version_info
 from urlparse import urljoin
 
 from ansible.errors import AnsibleError
@@ -72,15 +74,25 @@ class LookupModule(LookupBase):
             raise AnsibleError('Vault authentication token missing. Specify with'
                                ' VAULT_TOKEN environment variable or $HOME/.vault-token')
 
-        context = ssl.create_default_context(cafile=os.getenv('VAULT_CACERT'),
-                                             capath=os.getenv('VAULT_CAPATH'))
-
-        request_url = urljoin(url, "v1/%s" % (key))
         try:
+            context = ssl.create_default_context(cafile=os.getenv('VAULT_CACERT'),
+                                                 capath=os.getenv('VAULT_CAPATH'))
+            request_url = urljoin(url, "v1/%s" % (key))
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', token)
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context)
+        except AttributeError as e:
+            python_version_cur = ".".join([str(version_info.major),
+                                           str(version_info.minor),
+                                           str(version_info.micro)])
+            python_version_min = "2.7.9"
+            if StrictVersion(python_version_cur) < StrictVersion(python_version_min):
+                raise AnsibleError('Unable to read %s from vault:'
+                                   ' Using Python %s and vault lookup plugin requires at least %s'
+                                   % (key, python_version_cur, python_version_min))
+            else:
+                raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
         except urllib2.HTTPError as e:
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
         except Exception as e:
