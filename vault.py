@@ -77,10 +77,9 @@ class LookupModule(LookupBase):
         cafile = os.getenv('VAULT_CACERT')
         capath = os.getenv('VAULT_CAPATH')
         try:
+            context = None
             if cafile or capath:
                 context = ssl.create_default_context(cafile=cafile, capath=capath)
-            else:
-                context = None
             request_url = urljoin(url, "v1/%s" % (key))
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', token)
