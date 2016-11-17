@@ -84,10 +84,7 @@ class LookupModule(LookupBase):
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', token)
             req.add_header('Content-Type', 'application/json')
-            if context:
-                response = urllib2.urlopen(req, context=context)
-            else:
-                response = urllib2.urlopen(req)
+            response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except AttributeError as e:
             python_version_cur = ".".join([str(version_info.major),
                                            str(version_info.minor),
