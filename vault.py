@@ -49,12 +49,12 @@ class LookupModule(LookupBase):
                 parameter_bag[parameter_key] = parameter_value
 
             data = json.dumps(parameter_bag)
-        except:
+        except Exception:
             data = None
 
         try:
             field = terms[1]
-        except:
+        except IndexError:
             field = None
 
         # the environment variable takes precendence over the Ansible variable.
