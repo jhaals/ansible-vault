@@ -71,7 +71,7 @@ class LookupModule(LookupBase):
         if not token:
             try:
                 with open(os.path.join(os.getenv('HOME'), '.vault-token')) as file:
-                    token = file.read()
+                    token = file.read().strip()
             except IOError:
                 # token not found in file is same case below as not found in env var
                 pass
