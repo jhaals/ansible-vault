@@ -22,6 +22,8 @@ except ImportError:
         def get_basedir(self, variables):
             return self.basedir
 
+_use_vault_cache = os.environ.get("ANSIBLE_HASHICORP_VAULT_USE_CACHE", "yes").lower() in ("yes", "1", "true")
+_vault_cache = {}
 
 class LookupModule(LookupBase):
 
@@ -81,6 +83,17 @@ class LookupModule(LookupBase):
 
         cafile = os.getenv('VAULT_CACERT') or (variables or inject).get('vault_cacert')
         capath = os.getenv('VAULT_CAPATH') or (variables or inject).get('vault_capath')
+
+        if _use_vault_cache and _vault_cache.has_key(key):
+            result = _vault_cache[key]
+        else:
+            result = self._fetch_remotely(cafile, capath, data, key, token, url)
+            if _use_vault_cache:
+                _vault_cache[key] = result
+
+        return [result['data'][field]] if field is not None else [result['data']]
+
+    def _fetch_remotely(self, cafile, capath, data, key, token, url):
         try:
             context = None
             if cafile or capath:
@@ -106,7 +119,5 @@ class LookupModule(LookupBase):
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
         except Exception as e:
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
-
         result = json.loads(response.read())
-
-        return [result['data'][field]] if field is not None else [result['data']]
+        return result

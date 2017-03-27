@@ -38,6 +38,15 @@ from the file `$HOME/.vault-token`, as documented at
 If any such parameter is set by both an environment variable and an
 alternative means, the environment variable takes precedence.
 
+### Caching
+
+By default secrets fetched from Vault will be cached in memory, unless you specify
+
+    export ANSIBLE_HASHICORP_VAULT_USE_CACHE=no
+
+Note that secrets will be fetched once per fork (defaults to 5). If you turn off
+this feature by toggling above variable, all lookups will be done per node instead.
+
 ### Usage
 ansible-vault works as any other lookup plugin.
 
