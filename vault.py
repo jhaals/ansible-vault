@@ -25,6 +25,7 @@ except ImportError:
 _use_vault_cache = os.environ.get("ANSIBLE_HASHICORP_VAULT_USE_CACHE", "yes").lower() in ("yes", "1", "true")
 _vault_cache = {}
 
+
 class LookupModule(LookupBase):
 
     def run(self, terms, inject=None, variables=None, **kwargs):
@@ -84,7 +85,7 @@ class LookupModule(LookupBase):
         cafile = os.getenv('VAULT_CACERT') or (variables or inject).get('vault_cacert')
         capath = os.getenv('VAULT_CAPATH') or (variables or inject).get('vault_capath')
 
-        if _use_vault_cache and _vault_cache.has_key(key):
+        if _use_vault_cache and key in _vault_cache:
             result = _vault_cache[key]
         else:
             result = self._fetch_remotely(cafile, capath, data, key, token, url)
