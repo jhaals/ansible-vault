@@ -78,9 +78,8 @@ class LookupModule(LookupBase):
                 with open(token_path) as token_file:
                     token = token_file.read().strip()
             except IOError as err:
-                if err.errno == errno.ENOENT:
-                    pass
-                raise AnsibleError('Error occurred when opening ' + token_path + ': ' + err.strerror)
+                if err.errno != errno.ENOENT:
+                    raise AnsibleError('Error occurred when opening ' + token_path + ': ' + err.strerror)
         if not token:
             raise AnsibleError('Vault authentication token missing. Specify with'
                                ' VAULT_TOKEN environment variable or in $HOME/.vault-token '
