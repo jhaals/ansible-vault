@@ -1,6 +1,7 @@
 import os
 import urllib2
 import json
+import errno
 import ssl
 from distutils.version import StrictVersion
 from sys import version_info
@@ -72,15 +73,17 @@ class LookupModule(LookupBase):
         # so as not to encourage bad security practices.
         token = os.getenv('VAULT_TOKEN')
         if not token:
+            token_path = os.path.join(os.getenv('HOME'), '.vault-token')
             try:
-                with open(os.path.join(os.getenv('HOME'), '.vault-token')) as file:
-                    token = file.read().strip()
-            except IOError:
-                # token not found in file is same case below as not found in env var
-                pass
+                with open(token_path) as token_file:
+                    token = token_file.read().strip()
+            except IOError as err:
+                if err.errno != errno.ENOENT:
+                    raise AnsibleError('Error occurred when opening ' + token_path + ': ' + err.strerror)
         if not token:
             raise AnsibleError('Vault authentication token missing. Specify with'
-                               ' VAULT_TOKEN environment variable or $HOME/.vault-token')
+                               ' VAULT_TOKEN environment variable or in $HOME/.vault-token '
+                               '(Current $HOME value is ' + os.getenv('HOME') + ')')
 
         cafile = os.getenv('VAULT_CACERT') or (variables or inject).get('vault_cacert')
         capath = os.getenv('VAULT_CAPATH') or (variables or inject).get('vault_capath')
