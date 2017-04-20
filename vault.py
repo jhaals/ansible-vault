@@ -1,11 +1,22 @@
 import os
-import urllib2
+
+# compatibility with Python >= 2.7.13
+try:
+    import urllib2
+except ImportError:
+    import urllib.request as urllib2
+
 import json
 import errno
 import ssl
 from distutils.version import StrictVersion
 from sys import version_info
-from urlparse import urljoin
+
+# compatibility with Python >= 2.7.13
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 from ansible.errors import AnsibleError
 import ansible.utils
