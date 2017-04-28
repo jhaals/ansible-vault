@@ -41,7 +41,7 @@ class LookupModule(LookupBase):
 
         try:
             parameters = term_split[1]
-
+            print 2
             parameters = parameters.split(' ')
 
             parameter_bag = {}
@@ -87,21 +87,26 @@ class LookupModule(LookupBase):
 
         cafile = os.getenv('VAULT_CACERT') or (variables or inject).get('vault_cacert')
         capath = os.getenv('VAULT_CAPATH') or (variables or inject).get('vault_capath')
+        cahostverify = os.getenv('VAULT_CAHOSTVERIFY') or (variables or inject).get('vault_cahostverify') or 'yes'
 
         if _use_vault_cache and key in _vault_cache:
             result = _vault_cache[key]
         else:
-            result = self._fetch_remotely(cafile, capath, data, key, token, url)
+            result = self._fetch_remotely(cafile, capath, data, key, token, url, cahostverify)
             if _use_vault_cache:
                 _vault_cache[key] = result
 
         return [result['data'][field]] if field is not None else [result['data']]
 
-    def _fetch_remotely(self, cafile, capath, data, key, token, url):
+    def _fetch_remotely(self, cafile, capath, data, key, token, url, cahostverify):
         try:
             context = None
             if cafile or capath:
                 context = ssl.create_default_context(cafile=cafile, capath=capath)
+                if cahostverify == 'no':
+                    context.check_hostname = False
+                else:
+                    context.check_hostname = True
             request_url = urljoin(url, "v1/%s" % (key))
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', token)
