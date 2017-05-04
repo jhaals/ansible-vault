@@ -25,8 +25,14 @@ Python 2.7.9.
     export VAULT_CAPATH=/etc/ssl/localCA
 
 The Vault address, CA certificate, and path can also be set via the Ansible
-variables `vault_addr`, `vault_cacert`, and `vault_capath`, respectively. For
-more information on setting variables in Ansible, see the
+variables `vault_addr`, `vault_cacert`, and `vault_capath`, respectively. 
+
+    export VAULT_CAHOSTVERIFY="no"
+
+This avoid the hostname check for Vault certificate (useful with self-signed certicates). 
+This option can also be set via the Ansible variable `vault_cahostverify`.
+
+For more information on setting variables in Ansible, see the
 [variables docs](http://docs.ansible.com/ansible/playbooks_variables.html).
 
 The Vault token intentionally can **not** be set via an Ansible variable, as
