@@ -41,7 +41,6 @@ class LookupModule(LookupBase):
 
         try:
             parameters = term_split[1]
-            print 2
             parameters = parameters.split(' ')
 
             parameter_bag = {}
