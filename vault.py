@@ -1,5 +1,5 @@
 import os
-
+from random import randint
 # compatibility with Python >= 2.7.13
 try:
     import urllib2
@@ -36,7 +36,6 @@ except ImportError:
 
 _use_vault_cache = os.environ.get("ANSIBLE_HASHICORP_VAULT_USE_CACHE", "yes").lower() in ("yes", "1", "true")
 _vault_cache = {}
-
 
 class LookupModule(LookupBase):
 
@@ -82,17 +81,18 @@ class LookupModule(LookupBase):
         # intentionally do *not* support setting this via an Ansible variable,
         # so as not to encourage bad security practices.
         github_token = os.getenv('VAULT_GITHUB_API_TOKEN')
-        if not github_token:
+        vault_token = os.getenv('VAULT_TOKEN')
+        if not vault_token and not github_token:
             token_path = os.path.join(os.getenv('HOME'), '.vault-token')
             try:
                 with open(token_path) as token_file:
-                    github_token = token_file.read().strip()
+                    vault_token = token_file.read().strip()
             except IOError as err:
                 if err.errno != errno.ENOENT:
                     raise AnsibleError('Error occurred when opening ' + token_path + ': ' + err.strerror)
-        if not github_token:
-            raise AnsibleError('Vault github authentication token missing. Specify with'
-                               ' VAULT_TOKEN environment variable or in $HOME/.vault-token '
+        if not github_token and not vault_token:
+            raise AnsibleError('Vault or GitHub authentication token missing. Specify with'
+                               ' VAULT_TOKEN/VAULT_GITHUB_API_TOKEN environment variable or in $HOME/.vault-token '
                                '(Current $HOME value is ' + os.getenv('HOME') + ')')
 
         cafile = os.getenv('VAULT_CACERT') or (variables or inject).get('vault_cacert')
@@ -102,9 +102,10 @@ class LookupModule(LookupBase):
         if _use_vault_cache and key in _vault_cache:
             result = _vault_cache[key]
         else:
-            token_result = self._fetch_token(cafile, capath, github_token, url, cahostverify)
-            token = token_result['auth']['client_token']
-            result = self._fetch_remotely(cafile, capath, data, key, token, url, cahostverify)
+            if not vault_token:
+                token_result = self._fetch_token(cafile, capath, github_token, url, cahostverify)
+                vault_token = token_result['auth']['client_token']
+            result = self._fetch_remotely(cafile, capath, data, key, vault_token, url, cahostverify)
             if _use_vault_cache:
                 _vault_cache[key] = result
 
@@ -144,7 +145,7 @@ class LookupModule(LookupBase):
         result = json.loads(response.read())
         return result
 
-    def _fetch_remotely(self, cafile, capath, data, key, token, url, cahostverify):
+    def _fetch_remotely(self, cafile, capath, data, key, vault_token, url, cahostverify):
         try:
             context = None
             if cafile or capath:
@@ -155,7 +156,7 @@ class LookupModule(LookupBase):
                     context.check_hostname = True
             request_url = urljoin(url, "v1/%s" % (key))
             req = urllib2.Request(request_url, data)
-            req.add_header('X-Vault-Token', token)
+            req.add_header('X-Vault-Token', vault_token)
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except AttributeError as e:
