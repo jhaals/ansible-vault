@@ -1,5 +1,4 @@
 import os
-from random import randint
 # compatibility with Python >= 2.7.13
 try:
     import urllib2
