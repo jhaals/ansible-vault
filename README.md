@@ -14,7 +14,7 @@ The address to the Vault server:
 
     export VAULT_ADDR=http://192.168.33.10:8200/
 
-The plug supports both Vault auth token and GitHub auth token. To use Vault auth token:
+The plugin supports both Vault auth token and GitHub auth token. To use Vault auth token:
 
     export VAULT_TOKEN=56f48aef-8ad3-a0c4-447b-8e96990776ff
 
