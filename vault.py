@@ -36,6 +36,7 @@ except ImportError:
 _use_vault_cache = os.environ.get("ANSIBLE_HASHICORP_VAULT_USE_CACHE", "yes").lower() in ("yes", "1", "true")
 _vault_cache = {}
 
+
 class LookupModule(LookupBase):
 
     def run(self, terms, inject=None, variables=None, **kwargs):
@@ -47,6 +48,16 @@ class LookupModule(LookupBase):
 
         term_split = terms[0].split(' ', 1)
         key = term_split[0]
+
+        python_version_cur = ".".join([str(version_info.major),
+                                       str(version_info.minor),
+                                       str(version_info.micro)])
+        python_version_min = "2.7.9"
+        if StrictVersion(python_version_cur) < StrictVersion(python_version_min):
+            raise AnsibleError('Unable to read %s from vault:'
+                               ' Using Python %s, and vault lookup plugin requires at least %s'
+                               ' to use an SSL context (VAULT_CACERT or VAULT_CAPATH)'
+                               % (key, python_version_cur, python_version_min))
 
         try:
             parameters = term_split[1]
@@ -126,17 +137,7 @@ class LookupModule(LookupBase):
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except AttributeError as e:
-            python_version_cur = ".".join([str(version_info.major),
-                                           str(version_info.minor),
-                                           str(version_info.micro)])
-            python_version_min = "2.7.9"
-            if StrictVersion(python_version_cur) < StrictVersion(python_version_min):
-                raise AnsibleError('Unable to read %s from vault:'
-                                   ' Using Python %s, and vault lookup plugin requires at least %s'
-                                   ' to use an SSL context (VAULT_CACERT or VAULT_CAPATH)'
-                                   % (key, python_version_cur, python_version_min))
-            else:
-                raise AnsibleError('Unable to retrieve personal token from vault: %s' % (e))
+            raise AnsibleError('Unable to retrieve personal token from vault: %s' % (e))
         except urllib2.HTTPError as e:
             raise AnsibleError('Unable to retrieve personal token from vault: %s' % (e))
         except Exception as e:
@@ -159,17 +160,7 @@ class LookupModule(LookupBase):
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except AttributeError as e:
-            python_version_cur = ".".join([str(version_info.major),
-                                           str(version_info.minor),
-                                           str(version_info.micro)])
-            python_version_min = "2.7.9"
-            if StrictVersion(python_version_cur) < StrictVersion(python_version_min):
-                raise AnsibleError('Unable to read %s from vault:'
-                                   ' Using Python %s, and vault lookup plugin requires at least %s'
-                                   ' to use an SSL context (VAULT_CACERT or VAULT_CAPATH)'
-                                   % (key, python_version_cur, python_version_min))
-            else:
-                raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
+            raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
         except urllib2.HTTPError as e:
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
         except Exception as e:
