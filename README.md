@@ -10,11 +10,17 @@ The source for the plugin can be pointed to via a _requirements.yml_ file, and
 accessed via [`ansible-galaxy`](http://docs.ansible.com/ansible/galaxy.html).
 
 ### Configuration
-The address to the Vault server and the auth token are fetched from
-environment variables.
+The address to the Vault server:
 
     export VAULT_ADDR=http://192.168.33.10:8200/
+
+The plugin supports both Vault auth token and GitHub auth token. To use Vault auth token:
+
     export VAULT_TOKEN=56f48aef-8ad3-a0c4-447b-8e96990776ff
+
+If your Vault server is configured to use GitHub auth token:
+
+    export VAULT_GITHUB_API_TOKEN=56f48aef-8ad3-a0c4-447b-8e96990776ff
 
 The plugin also supports Vault's CA-related environment variables, to
 enable use of a server certificate issued by a not-widely-trusted
@@ -25,11 +31,11 @@ Python 2.7.9.
     export VAULT_CAPATH=/etc/ssl/localCA
 
 The Vault address, CA certificate, and path can also be set via the Ansible
-variables `vault_addr`, `vault_cacert`, and `vault_capath`, respectively. 
+variables `vault_addr`, `vault_cacert`, and `vault_capath`, respectively.
 
     export VAULT_CAHOSTVERIFY="no"
 
-This avoid the hostname check for Vault certificate (useful with self-signed certicates). 
+This avoid the hostname check for Vault certificate (useful with self-signed certicates).
 This option can also be set via the Ansible variable `vault_cahostverify`.
 
 For more information on setting variables in Ansible, see the
