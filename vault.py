@@ -40,6 +40,8 @@ _vault_cache = {}
 class LookupModule(LookupBase):
 
     def run(self, terms, inject=None, variables=None, **kwargs):
+        # Ansible variables are passed via "variables" in ansible 2.x, "inject" in 1.9.x
+        
         basedir = self.get_basedir(variables)
 
         if hasattr(ansible.utils, 'listify_lookup_plugin_terms'):
@@ -49,6 +51,11 @@ class LookupModule(LookupBase):
         term_split = terms[0].split(' ', 1)
         key = term_split[0]
 
+        # the environment variable takes precendence over the Ansible variable.
+        cafile = os.getenv('VAULT_CACERT') or (variables or inject).get('vault_cacert')
+        capath = os.getenv('VAULT_CAPATH') or (variables or inject).get('vault_capath')
+        cahostverify = (os.getenv('VAULT_CAHOSTVERIFY') or (variables or inject).get('vault_cahostverify') or 'yes') != 'no'
+        
         python_version_cur = ".".join([str(version_info.major),
                                        str(version_info.minor),
                                        str(version_info.micro)])
@@ -81,7 +88,6 @@ class LookupModule(LookupBase):
             field = None
 
         # the environment variable takes precendence over the Ansible variable.
-        # Ansible variables are passed via "variables" in ansible 2.x, "inject" in 1.9.x
         url = os.getenv('VAULT_ADDR') or (variables or inject).get('vault_addr')
         if not url:
             raise AnsibleError('Vault address not set. Specify with'
@@ -104,11 +110,7 @@ class LookupModule(LookupBase):
             raise AnsibleError('Vault or GitHub authentication token missing. Specify with'
                                ' VAULT_TOKEN/VAULT_GITHUB_API_TOKEN environment variable or in $HOME/.vault-token '
                                '(Current $HOME value is ' + os.getenv('HOME') + ')')
-
-        cafile = os.getenv('VAULT_CACERT') or (variables or inject).get('vault_cacert')
-        capath = os.getenv('VAULT_CAPATH') or (variables or inject).get('vault_capath')
-        cahostverify = os.getenv('VAULT_CAHOSTVERIFY') or (variables or inject).get('vault_cahostverify') or 'yes'
-
+        
         if _use_vault_cache and key in _vault_cache:
             result = _vault_cache[key]
         else:
@@ -126,10 +128,7 @@ class LookupModule(LookupBase):
             context = None
             if cafile or capath:
                 context = ssl.create_default_context(cafile=cafile, capath=capath)
-                if cahostverify == 'no':
-                    context.check_hostname = False
-                else:
-                    context.check_hostname = True
+                context.check_hostname = cahostverify
             request_url = urljoin(url, "v1/auth/github/login")
             req_params = {}
             req_params['token'] = github_token
@@ -150,10 +149,7 @@ class LookupModule(LookupBase):
             context = None
             if cafile or capath:
                 context = ssl.create_default_context(cafile=cafile, capath=capath)
-                if cahostverify == 'no':
-                    context.check_hostname = False
-                else:
-                    context.check_hostname = True
+                context.check_hostname = cahostverify
             request_url = urljoin(url, "v1/%s" % (key))
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', vault_token)
