@@ -108,7 +108,7 @@ Both of these forms work with both Ansible 1.9.x and 2.x. They only work
 within tasks, though. You can **not** use the `with_vault:` syntax within a
 variable definition file.
 
-### What's the difference between `ansible-vault` and `hashi_vault`
+### What's the difference between `ansible-vault` and [`hashi_vault`](https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/lookup/hashi_vault.py)
 
 - (Ansible Vault) No external dependencies; (hashi_vault) requires hvac
 - (Ansible Vault) Uses the same environment variables as vault itself
