@@ -8,6 +8,7 @@ except ImportError:
 import json
 import errno
 import ssl
+import shlex
 from distutils.version import StrictVersion
 from sys import version_info
 
@@ -78,11 +79,11 @@ class LookupModule(LookupBase):
 
         try:
             parameters = term_split[1]
-            parameters = parameters.split(' ')
+            parameters = shlex.split(parameters)
 
             parameter_bag = {}
             for parameter in parameters:
-                parameter_split = parameter.split('=')
+                parameter_split = parameter.split('=', 1)
 
                 parameter_key = parameter_split[0]
                 parameter_value = parameter_split[1]
