@@ -59,6 +59,20 @@ By default secrets fetched from Vault will be cached in memory, unless you speci
 Note that secrets will be fetched once per fork (defaults to 5). If you turn off
 this feature by toggling above variable, all lookups will be done per node instead.
 
+### [`Approle`](https://www.vaultproject.io/docs/auth/approle.html) support
+
+If you want to use the Approle auth backend, you can do this by setting the follwing 
+environment variables. If those vars are set, it is tried to get an approle token. If
+caching is enabled, the token is stored in the cache, so that it can be reused.
+
+    export ANSIBLE_HASHICORP_VAULT_ROLE_ID=ba78195c-12c9-557f-f8e2-75705b9b52ec
+    export ANSIBLE_HASHICORP_VAULT_SECRET_ID=5a4d079b-e6aa-ad54-8b0c-09dd35b740ee
+
+Per default the authentication will be done against ${YOUR_HOST}/v1/auth/approle/login
+You can change this to fit your layout by setting the following var to your value:
+
+    export ANSIBLE_HASHICORP_VAULT_ROLE_PATH=v1/auth/my/role/path/approle/login
+
 ### Usage
 ansible-vault works as any other lookup plugin.
 

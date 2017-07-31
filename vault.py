@@ -104,11 +104,28 @@ class LookupModule(LookupBase):
             raise AnsibleError('Vault address not set. Specify with'
                                ' VAULT_ADDR environment variable or vault_addr Ansible variable')
 
+        # Support for Approle backend
+        approle_role_id = os.getenv('ANSIBLE_HASHICORP_VAULT_ROLE_ID')
+        approle_secret_id = os.getenv('ANSIBLE_HASHICORP_VAULT_SECRET_ID')
+        approle_role_path = os.getenv('ANSIBLE_HASHICORP_VAULT_ROLE_PATH', 'v1/auth/approle/login')
+
+        # first check if an approle token is already cached
+        vault_token = _vault_cache.get('ANSIBLE_HASHICORP_VAULT_APPROLE_TOKEN', None)
+
+        # if approle role-id and secret-id are set, use approle to get a token
+        # and if caching is activated, the token will be stored in the cache
+        if not vault_token and approle_role_id and approle_secret_id:
+            vault_token = self._fetch_approle_token(
+                cafile, capath, approle_role_id, approle_secret_id, approle_role_path, url, cahostverify)
+            if vault_token and _use_vault_cache:
+                _vault_cache['ANSIBLE_HASHICORP_VAULT_APPROLE_TOKEN'] = vault_token
+
         # the environment variable takes precedence over the file-based token.
         # intentionally do *not* support setting this via an Ansible variable,
         # so as not to encourage bad security practices.
         github_token = os.getenv('VAULT_GITHUB_API_TOKEN')
-        vault_token = os.getenv('VAULT_TOKEN')
+        if not vault_token:
+            vault_token = os.getenv('VAULT_TOKEN')
         if not vault_token and not github_token:
             token_path = os.path.join(os.getenv('HOME'), '.vault-token')
             try:
@@ -126,7 +143,7 @@ class LookupModule(LookupBase):
             result = _vault_cache[key]
         else:
             if not vault_token:
-                token_result = self._fetch_token(cafile, capath, github_token, url, cahostverify)
+                token_result = self._fetch_github_token(cafile, capath, github_token, url, cahostverify)
                 vault_token = token_result['auth']['client_token']
             result = self._fetch_remotely(cafile, capath, data, key, vault_token, url, cahostverify)
             if _use_vault_cache:
@@ -134,16 +151,30 @@ class LookupModule(LookupBase):
 
         return [result['data'][field]] if field is not None else [result['data']]
 
-    def _fetch_token(self, cafile, capath, github_token, url, cahostverify):
+    def _fetch_approle_token(self, cafile, capath, role_id, secret_id, approle_role_path, url, cahostverify):
+        request_url = urljoin(url, approle_role_path)
+        req_params = {
+            'role_id': role_id,
+            'secret_id': secret_id
+        }
+        result = self._fetch_client_token(cafile, capath, request_url, req_params, cahostverify)
+        token = result['auth']['client_token']
+        return token
+
+    def _fetch_github_token(self, cafile, capath, github_token, url, cahostverify):
+        request_url = urljoin(url, "v1/auth/github/login")
+        req_params = {}
+        req_params['token'] = github_token
+        result = self._fetch_client_token(cafile, capath, request_url, req_params, cahostverify)
+        return result
+
+    def _fetch_client_token(self, cafile, capath, url, data, cahostverify):
         try:
             context = None
             if cafile or capath:
                 context = ssl.create_default_context(cafile=cafile, capath=capath)
                 context.check_hostname = cahostverify
-            request_url = urljoin(url, "v1/auth/github/login")
-            req_params = {}
-            req_params['token'] = github_token
-            req = urllib2.Request(request_url, json.dumps(req_params))
+            req = urllib2.Request(url, json.dumps(data))
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except AttributeError as e:
