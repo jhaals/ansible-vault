@@ -1,7 +1,13 @@
+sudo: required
 language: python
+services:
+  - docker
 python:
   - "2.7"
+before_install:
+  - docker build -t ansible/test -f tests/Dockerfile .
 install:
   pip install flake8
 script:
-  flake8
+  - flake8
+  - docker run -it ansible/test

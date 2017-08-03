@@ -1,0 +1,17 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  tasks:
+  - name: Get a secret from Vault
+    debug: msg="{{ lookup('vault', 'secret/hello', 'value') }}"
+  - name: Get a secret from using with_vault
+    debug: msg="{{ item.value }}"
+    with_vault:
+     - secret/hello
+  - name: Get default 'value' field
+    debug: msg="{{ lookup('vault', 'secret/hello') }}"
+  - name: Get custom field
+    debug: msg="{{ lookup('vault', 'secret/user', 'password') }}"
+  - name: Get certificate
+    debug: msg="{{ lookup('vault', 'pki/issue/example-dot-com common_name=foo.example.com format=pem_bundle').certificate }}"
