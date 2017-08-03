@@ -1,4 +1,4 @@
-# ansible-vault lookup module
+# ansible-vault lookup module [![Build Status](https://travis-ci.org/jhaals/ansible-vault.svg?branch=master)](https://travis-ci.org/jhaals/ansible-vault)
 This is a lookup module for secrets stored in [HashiCorp Vault](https://vaultproject.io/).
 Supports Ansible 1.9.x and 2.x
 
@@ -61,7 +61,7 @@ this feature by toggling above variable, all lookups will be done per node inste
 
 ### [`Approle`](https://www.vaultproject.io/docs/auth/approle.html) support
 
-If you want to use the Approle auth backend, you can do this by setting the follwing 
+If you want to use the Approle auth backend, you can do this by setting the follwing
 environment variables. If those vars are set, it is tried to get an approle token. If
 caching is enabled, the token is stored in the cache, so that it can be reused.
 
