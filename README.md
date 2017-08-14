@@ -5,6 +5,7 @@ Supports Ansible 1.9.x and 2.x
 ### Installation
 lookup plugins can be loaded from several different locations similar to `$PATH`, see
 [lookup_plugins](http://docs.ansible.com/ansible/intro_configuration.html#lookup-plugins).
+An example setup can be found in the [tests](tests) directory.
 
 The source for the plugin can be pointed to via a _requirements.yml_ file, and
 accessed via [`ansible-galaxy`](http://docs.ansible.com/ansible/galaxy.html).
