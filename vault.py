@@ -149,7 +149,12 @@ class LookupModule(LookupBase):
             if _use_vault_cache:
                 _vault_cache[key] = result
 
-        return [result['data'][field]] if field is not None else [result['data']]
+        if type(result) is dict:
+            if field is not None:
+                return [result['data'][field]]
+            elif 'data' in result:
+                return [result['data']]
+        return [result]
 
     def _fetch_approle_token(self, cafile, capath, role_id, secret_id, approle_role_path, url, cahostverify):
         request_url = urljoin(url, approle_role_path)
@@ -203,5 +208,7 @@ class LookupModule(LookupBase):
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
         except Exception as e:
             raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
-        result = json.loads(response.read())
-        return result
+        body = response.read()
+        if response.headers.get('Content-Type') == 'application/json':
+            body = json.loads(body)
+        return body
