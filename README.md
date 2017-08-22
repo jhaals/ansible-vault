@@ -39,6 +39,11 @@ variables `vault_addr`, `vault_cacert`, and `vault_capath`, respectively.
 This avoid the hostname check for Vault certificate (useful with self-signed certicates).
 This option can also be set via the Ansible variable `vault_cahostverify`.
 
+    export VAULT_SKIP_VERIFY=1
+
+This will disable ssl certs validation. `VAULT_CACERT`, `VAULT_CAPATH` and `VAULT_CAHOSTVERIFY` have to be unset.
+Can also be set via Ansible variable `vault_skip_verify: <bool>`.
+
 For more information on setting variables in Ansible, see the
 [variables docs](http://docs.ansible.com/ansible/playbooks_variables.html).
 

@@ -59,6 +59,8 @@ class LookupModule(LookupBase):
         capath = os.getenv('VAULT_CAPATH') or (variables or inject).get('vault_capath')
         cahostverify = (os.getenv('VAULT_CAHOSTVERIFY') or
                         (variables or inject).get('vault_cahostverify') or 'yes') != DISABLE_VAULT_CAHOSTVERIFY
+        skipverify = ((os.getenv('VAULT_SKIP_VERIFY') in ['1', 'true', 'True', 't']) or
+                      (variables or inject).get('vault_skip_verify'))
 
         python_version_cur = ".".join([str(version_info.major),
                                        str(version_info.minor),
@@ -116,7 +118,7 @@ class LookupModule(LookupBase):
         # and if caching is activated, the token will be stored in the cache
         if not vault_token and approle_role_id and approle_secret_id:
             vault_token = self._fetch_approle_token(
-                cafile, capath, approle_role_id, approle_secret_id, approle_role_path, url, cahostverify)
+                cafile, capath, approle_role_id, approle_secret_id, approle_role_path, url, cahostverify, skipverify)
             if vault_token and _use_vault_cache:
                 _vault_cache['ANSIBLE_HASHICORP_VAULT_APPROLE_TOKEN'] = vault_token
 
@@ -143,9 +145,9 @@ class LookupModule(LookupBase):
             result = _vault_cache[key]
         else:
             if not vault_token:
-                token_result = self._fetch_github_token(cafile, capath, github_token, url, cahostverify)
+                token_result = self._fetch_github_token(cafile, capath, github_token, url, cahostverify, skipverify)
                 vault_token = token_result['auth']['client_token']
-            result = self._fetch_remotely(cafile, capath, data, key, vault_token, url, cahostverify)
+            result = self._fetch_remotely(cafile, capath, data, key, vault_token, url, cahostverify, skipverify)
             if _use_vault_cache:
                 _vault_cache[key] = result
 
@@ -156,29 +158,32 @@ class LookupModule(LookupBase):
                 return [result['data']]
         return [result]
 
-    def _fetch_approle_token(self, cafile, capath, role_id, secret_id, approle_role_path, url, cahostverify):
+    def _fetch_approle_token(self, cafile, capath, role_id, secret_id,
+                             approle_role_path, url, cahostverify, skipverify):
         request_url = urljoin(url, approle_role_path)
         req_params = {
             'role_id': role_id,
             'secret_id': secret_id
         }
-        result = self._fetch_client_token(cafile, capath, request_url, req_params, cahostverify)
+        result = self._fetch_client_token(cafile, capath, request_url, req_params, cahostverify, skipverify)
         token = result['auth']['client_token']
         return token
 
-    def _fetch_github_token(self, cafile, capath, github_token, url, cahostverify):
+    def _fetch_github_token(self, cafile, capath, github_token, url, cahostverify, skipverify):
         request_url = urljoin(url, "v1/auth/github/login")
         req_params = {}
         req_params['token'] = github_token
-        result = self._fetch_client_token(cafile, capath, request_url, req_params, cahostverify)
+        result = self._fetch_client_token(cafile, capath, request_url, req_params, cahostverify, skipverify)
         return result
 
-    def _fetch_client_token(self, cafile, capath, url, data, cahostverify):
+    def _fetch_client_token(self, cafile, capath, url, data, cahostverify, skipverify):
         try:
             context = None
             if cafile or capath:
                 context = ssl.create_default_context(cafile=cafile, capath=capath)
                 context.check_hostname = cahostverify
+            elif skipverify:
+                context = ssl._create_unverified_context()
             req = urllib2.Request(url, json.dumps(data))
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
@@ -191,12 +196,14 @@ class LookupModule(LookupBase):
         result = json.loads(response.read())
         return result
 
-    def _fetch_remotely(self, cafile, capath, data, key, vault_token, url, cahostverify):
+    def _fetch_remotely(self, cafile, capath, data, key, vault_token, url, cahostverify, skipverify):
         try:
             context = None
             if cafile or capath:
                 context = ssl.create_default_context(cafile=cafile, capath=capath)
                 context.check_hostname = cahostverify
+            elif skipverify:
+                context = ssl._create_unverified_context()
             request_url = urljoin(url, "v1/%s" % (key))
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', vault_token)
