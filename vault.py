@@ -34,10 +34,10 @@ except ImportError:
         def get_basedir(self, variables):
             return self.basedir
 
-_use_vault_cache = os.environ.get("ANSIBLE_HASHICORP_VAULT_USE_CACHE", "yes").lower() in ("yes", "1", "true")
-_vault_cache = {}
-
+USE_CACHE = os.environ.get(
+    "ANSIBLE_HASHICORP_VAULT_USE_CACHE", "yes").lower() in ("yes", "1", "true")
 DISABLE_VAULT_CAHOSTVERIFY = "no"
+VAULT_CACHE = {}
 
 
 class LookupModule(LookupBase):
@@ -61,23 +61,7 @@ class LookupModule(LookupBase):
                         (variables or inject).get('vault_cahostverify') or 'yes') != DISABLE_VAULT_CAHOSTVERIFY
         skipverify = ((os.getenv('VAULT_SKIP_VERIFY') in ['1', 'true', 'True', 't']) or
                       (variables or inject).get('vault_skip_verify'))
-
-        python_version_cur = ".".join([str(version_info.major),
-                                       str(version_info.minor),
-                                       str(version_info.micro)])
-        python_version_min = "2.7.9"
-        if StrictVersion(python_version_cur) < StrictVersion(python_version_min):
-            if cafile or capath:
-                raise AnsibleError('Unable to read %s from vault:'
-                                   ' Using Python %s, and vault lookup plugin requires at least %s'
-                                   ' to use an SSL context (VAULT_CACERT or VAULT_CAPATH)'
-                                   % (key, python_version_cur, python_version_min))
-            elif cahostverify:
-                raise AnsibleError('Unable to read %s from vault:'
-                                   ' Using Python %s, and vault lookup plugin requires at least %s'
-                                   ' to verify Vault certificate. (set VAULT_CAHOSTVERIFY to \'%s\''
-                                   ' to disable certificate verification.)'
-                                   % (key, python_version_cur, python_version_min, DISABLE_VAULT_CAHOSTVERIFY))
+        self._verify_python_version(key, cafile, capath, cahostverify)
 
         try:
             parameters = term_split[1]
@@ -112,15 +96,15 @@ class LookupModule(LookupBase):
         approle_role_path = os.getenv('ANSIBLE_HASHICORP_VAULT_ROLE_PATH', 'v1/auth/approle/login')
 
         # first check if an approle token is already cached
-        vault_token = _vault_cache.get('ANSIBLE_HASHICORP_VAULT_APPROLE_TOKEN', None)
+        vault_token = VAULT_CACHE.get('ANSIBLE_HASHICORP_VAULT_APPROLE_TOKEN', None)
 
         # if approle role-id and secret-id are set, use approle to get a token
         # and if caching is activated, the token will be stored in the cache
         if not vault_token and approle_role_id and approle_secret_id:
             vault_token = self._fetch_approle_token(
                 cafile, capath, approle_role_id, approle_secret_id, approle_role_path, url, cahostverify, skipverify)
-            if vault_token and _use_vault_cache:
-                _vault_cache['ANSIBLE_HASHICORP_VAULT_APPROLE_TOKEN'] = vault_token
+            if vault_token and USE_CACHE:
+                VAULT_CACHE['ANSIBLE_HASHICORP_VAULT_APPROLE_TOKEN'] = vault_token
 
         # the environment variable takes precedence over the file-based token.
         # intentionally do *not* support setting this via an Ansible variable,
@@ -141,15 +125,15 @@ class LookupModule(LookupBase):
                                ' VAULT_TOKEN/VAULT_GITHUB_API_TOKEN environment variable or in $HOME/.vault-token '
                                '(Current $HOME value is ' + os.getenv('HOME') + ')')
 
-        if _use_vault_cache and key in _vault_cache:
-            result = _vault_cache[key]
+        if USE_CACHE and key in VAULT_CACHE:
+            result = VAULT_CACHE[key]
         else:
             if not vault_token:
                 token_result = self._fetch_github_token(cafile, capath, github_token, url, cahostverify, skipverify)
                 vault_token = token_result['auth']['client_token']
-            result = self._fetch_remotely(cafile, capath, data, key, vault_token, url, cahostverify, skipverify)
-            if _use_vault_cache:
-                _vault_cache[key] = result
+            result = self._fetch_secret(cafile, capath, data, key, vault_token, url, cahostverify, skipverify)
+            if USE_CACHE:
+                VAULT_CACHE[key] = result
 
         if type(result) is dict:
             if field is not None:
@@ -187,16 +171,12 @@ class LookupModule(LookupBase):
             req = urllib2.Request(url, json.dumps(data))
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
-        except AttributeError as e:
-            raise AnsibleError('Unable to retrieve personal token from vault: %s' % (e))
-        except urllib2.HTTPError as e:
-            raise AnsibleError('Unable to retrieve personal token from vault: %s' % (e))
-        except Exception as e:
-            raise AnsibleError('Unable to retrieve personal token from vault: %s' % (e))
+        except Exception as ex:
+            raise AnsibleError('Unable to retrieve personal token from vault: %s' % (ex))
         result = json.loads(response.read())
         return result
 
-    def _fetch_remotely(self, cafile, capath, data, key, vault_token, url, cahostverify, skipverify):
+    def _fetch_secret(self, cafile, capath, data, key, vault_token, url, cahostverify, skipverify):
         try:
             context = None
             if cafile or capath:
@@ -209,13 +189,27 @@ class LookupModule(LookupBase):
             req.add_header('X-Vault-Token', vault_token)
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
-        except AttributeError as e:
-            raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
-        except urllib2.HTTPError as e:
-            raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
-        except Exception as e:
-            raise AnsibleError('Unable to read %s from vault: %s' % (key, e))
+        except Exception as ex:
+            raise AnsibleError('Unable to read %s from vault: %s' % (key, ex))
         body = response.read()
         if response.headers.get('Content-Type') == 'application/json':
             body = json.loads(body)
         return body
+
+    def _verify_python_version(self, key, cafile, capath, cahostverify):
+        python_version_cur = ".".join([str(version_info.major),
+                                       str(version_info.minor),
+                                       str(version_info.micro)])
+        python_version_min = "2.7.9"
+        if StrictVersion(python_version_cur) < StrictVersion(python_version_min):
+            if cafile or capath:
+                raise AnsibleError('Unable to read %s from vault:'
+                                   ' Using Python %s, and vault lookup plugin requires at least %s'
+                                   ' to use an SSL context (VAULT_CACERT or VAULT_CAPATH)'
+                                   % (key, python_version_cur, python_version_min))
+            elif cahostverify:
+                raise AnsibleError('Unable to read %s from vault:'
+                                   ' Using Python %s, and vault lookup plugin requires at least %s'
+                                   ' to verify Vault certificate. (set VAULT_CAHOSTVERIFY to \'%s\''
+                                   ' to disable certificate verification.)'
+                                   % (key, python_version_cur, python_version_min, DISABLE_VAULT_CAHOSTVERIFY))
