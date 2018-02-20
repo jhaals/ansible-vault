@@ -2,12 +2,11 @@ sudo: required
 language: python
 services:
   - docker
-python:
-  - "2.7"
-before_install:
-  - docker build -t ansible/test -f tests/Dockerfile .
 install:
-  pip install flake8
+  - docker build -t ansible_vault/py2 -f tests/Dockerfile.py2 .
+  - docker build -t ansible_vault/py3 -f tests/Dockerfile.py3 .
 script:
-  - flake8
-  - docker run -it ansible/test
+  - docker run -it ansible_vault/py2 flake8
+  - docker run -it ansible_vault/py2 ./tests/test.sh
+  - docker run -it ansible_vault/py3 flake8
+  - docker run -it ansible_vault/py3 ./tests/test.sh

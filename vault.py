@@ -9,6 +9,7 @@ import json
 import errno
 import ssl
 import shlex
+import codecs
 from distutils.version import StrictVersion
 from sys import version_info
 
@@ -168,12 +169,14 @@ class LookupModule(LookupBase):
                 context.check_hostname = cahostverify
             elif skipverify:
                 context = ssl._create_unverified_context()
+            data = data.encode('utf-8') if data else None
             req = urllib2.Request(url, json.dumps(data))
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except Exception as ex:
             raise AnsibleError('Unable to retrieve personal token from vault: %s' % (ex))
-        result = json.loads(response.read())
+        reader = codecs.getreader("utf-8")
+        result = json.load(reader(response))
         return result
 
     def _fetch_secret(self, cafile, capath, data, key, vault_token, url, cahostverify, skipverify):
@@ -185,15 +188,17 @@ class LookupModule(LookupBase):
             elif skipverify:
                 context = ssl._create_unverified_context()
             request_url = urljoin(url, "v1/%s" % (key))
+            data = data.encode('utf-8') if data else None
             req = urllib2.Request(request_url, data)
             req.add_header('X-Vault-Token', vault_token)
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except Exception as ex:
             raise AnsibleError('Unable to read %s from vault: %s' % (key, ex))
-        body = response.read()
+        reader = codecs.getreader("utf-8")
+        body = reader(response)
         if response.headers.get('Content-Type') == 'application/json':
-            body = json.loads(body)
+            body = json.load(body)
         return body
 
     def _verify_python_version(self, key, cafile, capath, cahostverify):

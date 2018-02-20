@@ -6,7 +6,7 @@ ERR=0
 vault server -dev &
 VAULT_PID=$!
 sleep 1
-vault mount pki
+vault secrets enable pki
 vault write pki/root/generate/internal common_name=myvault.com
 vault write pki/config/urls issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
 vault write pki/roles/example-dot-com \
