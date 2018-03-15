@@ -174,7 +174,11 @@ class LookupModule(LookupBase):
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except Exception as ex:
-            raise AnsibleError('Unable to retrieve personal token from vault: %s' % (ex))
+            if ex.code in [301, 302, 303, 307]:
+                return self._fetch_client_token(cafile, capath, ex.headers.dict['location'], data, cahostverify,
+                                                skipverify)
+            else:
+                raise AnsibleError('Unable to retrieve personal token from vault: %s' % (ex))
         reader = codecs.getreader("utf-8")
         result = json.load(reader(response))
         return result
@@ -194,7 +198,11 @@ class LookupModule(LookupBase):
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except Exception as ex:
-            raise AnsibleError('Unable to read %s from vault: %s' % (key, ex))
+            if ex.code in [301, 302, 303, 307]:
+                return self._fetch_secret(cafile, capath, data, key, vault_token, ex.headers.dict['location'],
+                                          cahostverify, skipverify)
+            else:
+                raise AnsibleError('Unable to read %s from vault: %s' % (key, ex))
         reader = codecs.getreader("utf-8")
         body = reader(response)
         if response.headers.get('Content-Type') == 'application/json':
