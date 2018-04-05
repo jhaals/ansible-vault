@@ -2,6 +2,9 @@
 This is a lookup module for secrets stored in [HashiCorp Vault](https://vaultproject.io/).
 Supports Ansible 1.9.x and 2.x
 
+#### Deprecation notice
+ansible-vault has been ***deprecated*** due to lack of personal usage of ansible and vault over the last years. There are other plugins such as [hashivault](https://github.com/TerryHowe/ansible-modules-hashivault) which provide the same functionality and are better maintained. 
+
 ### Installation
 lookup plugins can be loaded from several different locations similar to `$PATH`, see
 [lookup_plugins](http://docs.ansible.com/ansible/intro_configuration.html#lookup-plugins).
