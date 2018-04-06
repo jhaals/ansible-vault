@@ -174,7 +174,7 @@ class LookupModule(LookupBase):
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except Exception as ex:
-            if ex.code in [301, 302, 303, 307]:
+            if hasattr(ex, 'code') and ex.code in [301, 302, 303, 307]:
                 return self._fetch_client_token(cafile, capath, ex.headers.dict['location'], data, cahostverify,
                                                 skipverify)
             else:
@@ -198,7 +198,7 @@ class LookupModule(LookupBase):
             req.add_header('Content-Type', 'application/json')
             response = urllib2.urlopen(req, context=context) if context else urllib2.urlopen(req)
         except Exception as ex:
-            if ex.code in [301, 302, 303, 307]:
+            if hasattr(ex, 'code') and ex.code in [301, 302, 303, 307]:
                 return self._fetch_secret(cafile, capath, data, key, vault_token, ex.headers.dict['location'],
                                           cahostverify, skipverify)
             else:
